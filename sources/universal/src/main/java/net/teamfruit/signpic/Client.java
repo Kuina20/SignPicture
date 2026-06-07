@@ -25,7 +25,6 @@ import com.google.gson.Gson;
 import net.minecraft.block.BlockSign;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.ResourceLocation;
@@ -143,24 +142,26 @@ public class Client {
 			return;
 
 		try {
-			final LaunchClassLoader lloader = (LaunchClassLoader) Client.class.getClassLoader();
-			final URL url = mod.toURI().toURL();
-			final Field f_ucp = URLClassLoader.class.getDeclaredField("ucp");
-			final Class<?> sunURLClassPath = Class.forName("sun.misc.URLClassPath");
-			final Field f_loaders = sunURLClassPath.getDeclaredField("loaders");
-			final Field f_lmap = sunURLClassPath.getDeclaredField("lmap");
-			f_ucp.setAccessible(true);
-			f_loaders.setAccessible(true);
-			f_lmap.setAccessible(true);
+			final ClassLoader loader = Client.class.getClassLoader();
+			if (loader instanceof URLClassLoader) {
+				final URL url = mod.toURI().toURL();
+				final Field f_ucp = URLClassLoader.class.getDeclaredField("ucp");
+				f_ucp.setAccessible(true);
 
-			final Object ucp = f_ucp.get(lloader);
-			final Closeable loader = ((Map<String, Closeable>) f_lmap.get(ucp)).remove(urlNoFragString(url));
-			if (loader!=null) {
-				loader.close();
-				((List<?>) f_loaders.get(ucp)).remove(loader);
+				final Object ucp = f_ucp.get(loader);
+				final Field f_loaders = ucp.getClass().getDeclaredField("loaders");
+				final Field f_lmap = ucp.getClass().getDeclaredField("lmap");
+				f_loaders.setAccessible(true);
+				f_lmap.setAccessible(true);
+
+				final Closeable urlLoader = ((Map<String, Closeable>) f_lmap.get(ucp)).remove(urlNoFragString(url));
+				if (urlLoader!=null) {
+					urlLoader.close();
+					((List<?>) f_loaders.get(ucp)).remove(urlLoader);
+				}
 			}
 		} catch (final Exception e) {
-			e.printStackTrace();
+			Log.log.debug("Could not release mod jar from class loader before deleting", e);
 		}
 
 		if (!mod.delete()) {

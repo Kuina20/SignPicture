@@ -11,7 +11,9 @@ public interface IModCommand extends ICommand {
 	@Nonnull
 	String getFullCommandString();
 
-	int getRequiredPermissionLevel();
+	default int getRequiredPermissionLevel() {
+		return 0;
+	}
 
 	@Nonnull
 	SortedSet<SubCommand> getChildren();

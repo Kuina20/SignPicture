@@ -76,10 +76,8 @@ public class GuiTask extends WPanel {
 							GuiTask.this.showtime.set(-1f);
 						final boolean b = GuiTask.this.showtime.getTime()<0f;
 						if (b) {
-							if (!GuiTask.this.show) {
+							if (!GuiTask.this.show)
 								GuiTask.this.right.stop().add(Easings.easeOutQuart.move(.7f, 1f)).start();
-								Client.playSound(new ResourceLocation("signpic", "gui.show"), 1.0F);
-							}
 							GuiTask.this.show = true;
 						} else {
 							if (GuiTask.this.show)
