@@ -12,8 +12,8 @@ import net.teamfruit.signpic.asm.lib.DescHelper;
 import net.teamfruit.signpic.asm.lib.MethodMatcher;
 
 public class TileEntityVisitor extends ClassVisitor {
-	private static class HookMethodVisitor extends MethodVisitor {
-		public HookMethodVisitor(final @Nullable MethodVisitor mv) {
+	private static class RenderBoundingBoxHookMethodVisitor extends MethodVisitor {
+		public RenderBoundingBoxHookMethodVisitor(final @Nullable MethodVisitor mv) {
 			super(Opcodes.ASM5, mv);
 		}
 
@@ -38,11 +38,39 @@ public class TileEntityVisitor extends ClassVisitor {
 		}
 	}
 
-	private final MethodMatcher matcher;
+	private static class MaxRenderDistanceSquaredHookMethodVisitor extends MethodVisitor {
+		public MaxRenderDistanceSquaredHookMethodVisitor(final @Nullable MethodVisitor mv) {
+			super(Opcodes.ASM5, mv);
+		}
+
+		@Override
+		public void visitCode() {
+			super.visitCode();
+			/*
+			 *   0  aload_0 [this]
+			 *   1  instanceof net.minecraft.tileentity.TileEntitySign
+			 *   4  ifeq 11
+			 *   7  ldc2_w 16384.0
+			 *  10  dreturn
+			 *  11  aload_0 [this]
+			 */
+			visitVarInsn(Opcodes.ALOAD, 0);
+			visitTypeInsn(Opcodes.INSTANCEOF, ClassName.of("net.minecraft.tileentity.TileEntitySign").getBytecodeName());
+			final Label skipReturn = new Label();
+			visitJumpInsn(Opcodes.IFEQ, skipReturn);
+			visitLdcInsn(Double.valueOf(128d*128d));
+			visitInsn(Opcodes.DRETURN);
+			visitLabel(skipReturn);
+		}
+	}
+
+	private final MethodMatcher renderBoundingBoxMatcher;
+	private final MethodMatcher maxRenderDistanceSquaredMatcher;
 
 	public TileEntityVisitor(final String obfClassName, final ClassVisitor cv) {
 		super(Opcodes.ASM5, cv);
-		this.matcher = new MethodMatcher(ClassName.fromBytecodeName(obfClassName), DescHelper.toDescMethod(ClassName.of("net.minecraft.util.math.AxisAlignedBB")), ASMDeobfNames.TileEntityGetRenderBoundingBox);
+		this.renderBoundingBoxMatcher = new MethodMatcher(ClassName.fromBytecodeName(obfClassName), DescHelper.toDescMethod(ClassName.of("net.minecraft.util.math.AxisAlignedBB")), ASMDeobfNames.TileEntityGetRenderBoundingBox);
+		this.maxRenderDistanceSquaredMatcher = new MethodMatcher(ClassName.fromBytecodeName(obfClassName), DescHelper.toDescMethod(double.class), ASMDeobfNames.TileEntityGetMaxRenderDistanceSquared);
 	}
 
 	@Override
@@ -50,6 +78,10 @@ public class TileEntityVisitor extends ClassVisitor {
 		final MethodVisitor parent = super.visitMethod(access, name, desc, signature, exceptions);
 		if (name==null||desc==null)
 			return parent;
-		return this.matcher.match(name, desc) ? new HookMethodVisitor(parent) : parent;
+		if (this.renderBoundingBoxMatcher.match(name, desc))
+			return new RenderBoundingBoxHookMethodVisitor(parent);
+		if (this.maxRenderDistanceSquaredMatcher.match(name, desc))
+			return new MaxRenderDistanceSquaredHookMethodVisitor(parent);
+		return parent;
 	}
 }

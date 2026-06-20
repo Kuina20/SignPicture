@@ -9,6 +9,7 @@ import net.teamfruit.signpic.compat.CompatVersion;
 
 public class ASMDeobfNames {
 	public static final @Nonnull RefName TileEntityGetRenderBoundingBox = RefName.deobName("getRenderBoundingBox", "func_184177_bl");
+	public static final @Nonnull RefName TileEntityGetMaxRenderDistanceSquared = RefName.deobName("getMaxRenderDistanceSquared", "func_145833_n");
 	public static final @Nonnull RefName GuiNewChatDrawnChatLines = ((Supplier<RefName>) () -> {
 		switch (CompatVersion.version()) {
 			case V8:
