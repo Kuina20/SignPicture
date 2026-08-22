@@ -100,14 +100,27 @@ public class EntryId {
 			return String.format("ItemEntryId [name=%s]", this.name);
 		}
 
+		public static boolean hasSignText(final @Nullable NBTTagCompound nbt) {
+			if (nbt!=null)
+				for (int i = 1; i<=4; i++)
+					if (nbt.hasKey("Text"+i, 8))
+						return true;
+			return false;
+		}
+
 		public static @Nonnull ItemEntryId fromItemStack(final @Nullable ItemStack itemStack) {
 			if (itemStack!=null) {
 				final NBTTagCompound nbt = itemStack.getTagCompound();
 				if (nbt!=null)
-					if (nbt.hasKey("BlockEntityTag", 10)) {
-						final NBTTagCompound tag = (NBTTagCompound) nbt.getTag("BlockEntityTag");
+					// Other mods may store their own tile entity into a sign item, so only read tags that really hold sign text
+					if (ItemEntryId.hasSignText(nbt.hasKey("BlockEntityTag", 10) ? nbt.getCompoundTag("BlockEntityTag") : null)) {
+						final NBTTagCompound tag = nbt.getCompoundTag("BlockEntityTag");
 						final TileEntitySign tile = new TileEntitySign();
-						tile.readFromNBT(tag);
+						try {
+							tile.readFromNBT(tag);
+						} catch (final Exception e) {
+							return ItemEntryId.blank;
+						}
 						String name = null;
 						if (ItemEntryId.hasName(nbt))
 							name = itemStack.getDisplayName();

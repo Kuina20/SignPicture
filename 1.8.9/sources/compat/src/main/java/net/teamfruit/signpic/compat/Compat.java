@@ -436,7 +436,7 @@ public class Compat {
 		}
 
 		public String getUnformattedText() {
-			return this.component.getUnformattedText();
+			return this.component!=null ? this.component.getUnformattedText() : "";
 		}
 
 		public static CompatTextComponent jsonToComponent(final String json) {
@@ -666,7 +666,7 @@ public class Compat {
 
 	public static class CompatTileEntitySign {
 		public static List<CompatTextComponent> getSignText(final TileEntitySign tile) {
-			return Lists.transform(Lists.newArrayList(tile.signText), t -> new CompatTextComponent(t));
+			return Lists.transform(Lists.newArrayList(tile.signText), t -> t!=null ? new CompatTextComponent(t) : CompatTextComponent.fromText(""));
 		}
 
 		public static void setSignText(final TileEntitySign tile, final List<CompatTextComponent> clines) {

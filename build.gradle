@@ -229,7 +229,6 @@ jar {
 		}
 		dependsOn p.tasks.build
 	}
-	classifier = 'universal'
 	destinationDir = mod_artifacts_dir
 }
 
